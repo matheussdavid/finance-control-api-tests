@@ -1,6 +1,6 @@
 # Revisão de estado atual — Rest Assured (aprendizado)
 
-Data: 2026-10-09 (atualizado — refatoração de estrutura + clients/fixtures/schemas)
+Data: 2026-10-13 (atualizado — regras confirmadas via sonda + schema de erro + register→login)
 
 ## Arquivos revisados
 
@@ -10,9 +10,10 @@ Data: 2026-10-09 (atualizado — refatoração de estrutura + clients/fixtures/s
 - `src/test/java/com/financecontrol/fixtures/authentication/UserRegistrationFixture.java` (174 linhas)
 - `src/test/java/com/financecontrol/models/authentication/LoginRequest.java`
 - `src/test/java/com/financecontrol/models/authentication/UserRegistrationRequest.java`
-- `src/test/java/com/financecontrol/tests/authentication/AuthenticationTest.java` (180 linhas, 15 testes)
-- `src/test/java/com/financecontrol/tests/authentication/UserRegistrationTest.java` (492 linhas, 27 testes)
+- `src/test/java/com/financecontrol/tests/authentication/AuthenticationTest.java` (16 testes)
+- `src/test/java/com/financecontrol/tests/authentication/UserRegistrationTest.java` (42 testes)
 - `src/test/resources/schemas/authentication/*.json` (2 schemas)
+- `src/test/resources/schemas/common/error-response-schema.json` (envelope de erro)
 
 ## Estrutura atual
 
@@ -49,21 +50,32 @@ Pacote por responsabilidade (antes tudo em `authentication/`). Conceito aprendid
 
 ## 4) AuthenticationTest
 
-- Cobertura: 15 casos (3x 200 — 1 por contrato/schema, 5x 401, 7x 400). Segue contrato PT-BR exato
+- Cobertura: 16 casos (4x 200 — inclui register→login e2e, 5x 401, 7x 400). Segue contrato PT-BR exato
 - Helpers privados `validarErro400`/`validarErro401` para envelope comum (repetição real justificou)
-- Uso: `.spec()` via client, JSONPath (`token`, `user.*`, `fields.*`), Hamcrest, `matchesJsonSchemaInClasspath`
-- Aprendizado: `401` sem `fields`, `400` com `fields`; casos de borda (vazio, só espaços, maiúsculas)
+- Uso: `.spec()` via client, JSONPath (`token`, `user.*`, `fields.*`), Hamcrest
+- Aprendizado: `401` sem `fields`, `400` com `fields`; casos de borda (vazio, só espaços, maiúsculas); fluxo register→login com credenciais recém-cadastradas
 
 ## 5) UserRegistrationTest
 
-- Cobertura: 27 testes (2x 201/contrato, 2x 409, 23x 400). `@ParameterizedTest` + `@ValueSource` para limites de tamanho
+- Cobertura: 42 testes (6x 201 — contrato, limites, charset/case/espaços; 2x 409; 34x 400). `@ParameterizedTest` + `@ValueSource` para limites de tamanho
 - `@BeforeAll` chama `prepararUsuariosDeDuplicidade()` (seed idempotente: 201 ou 409 esperado, senão falha com mensagem clara)
 - Aprendizado: text blocks + `.formatted`, JSONPath aninhado, boundary testing, testes negativos completos (vazio/em branco/fora limite/inválido)
 
-## 6) JSON Schemas
+## 6) Regras confirmadas (sonda empírica na API)
 
-- `login-response-schema.json` e `user-register-response-schema.json` (draft-07)
-- Validação de contrato com `matchesJsonSchemaInClasspath(...)` — garante estrutura (`token`, `user.id/name/email`) independente de valores
+Validado contra a API rodando (requests que falham em outro campo → sem efeito colateral; 1 cadastro controlado para normalização):
+
+- E-mail com maiúsculas é **aceito e salvo literalmente** (sem lowercase); login é case-sensitive e usa match exato.
+- E-mail com espaços nas extremidades → `400` `"O e-mail deve ser válido"` (valores **não** são trimados).
+- Username **sem** restrição de padrão — caracteres especiais aceitos.
+- Espaços em username/name são aceitos e **preservados** (sem trim): login exige a string com os espaços.
+
+## 7) JSON Schemas
+
+- `login-response-schema.json` e `user-register-response-schema.json` (draft-07) + `schemas/common/error-response-schema.json`
+- Validação de contrato com `matchesJsonSchemaInClasspath(...)` — sucesso garante estrutura (`token`, `user.id/name/email`)
+- Envelope de erro: `timestamp`, `status`, `error`, `message`, `path` obrigatórios na prática; `fields` (mapa `string→string`) só no `400`; schema exige só `status`/`error`/`message` (cobre 400/401/409)
+- Contrato de erro validado por **1 caso** (`deveRespeitarContratoDeEnvelopeDeErro`, 400) — sem repetir em todo negativo (redundante)
 - Aprendizado: schema validation complementa matchers; contrato mudou → teste falha mesmo com valores ok
 
 ## Dependências novas (pom)

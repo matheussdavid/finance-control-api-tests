@@ -31,7 +31,7 @@ Do not use these values in "happy path" tests — they already exist (tests rely
 - email `qa@tester.com` → 409 on register
 - login: `admin` / `12345678` (identifier accepts username or email, e.g. `admin@qa.com`)
 
-Generate unique data instead — existing pattern: `gerarUsername()` / `gerarEmail()` using `Random.nextInt(100000)`.
+Generate unique data instead — existing pattern: `UserRegistrationFixture.usuarioValido()` (UUID + Data Faker).
 
 ## Error response contract (assert exact strings)
 
@@ -40,13 +40,21 @@ Success: `201` register (`token`, `user.*`), `200` login (`token`, `user.*`).
 Failures share a fixed envelope — messages are PT-BR and must match **exactly**:
 
 ```json
-{ "status": 400, "error": "VALIDATION_ERROR", "message": "Falha na validação", "fields": { "<field>": "<PT-BR msg>" } }
+{ "timestamp": "<ISO-8601>", "status": 400, "error": "VALIDATION_ERROR", "message": "Falha na validação", "path": "/auth/register", "fields": { "<field>": "<PT-BR msg>" } }
 ```
 
-- `400` + `VALIDATION_ERROR` → field messages under `fields.<name>`
+- Common to all failures: `timestamp`, `status`, `error`, `message`, `path`.
+- `400` + `VALIDATION_ERROR` → field messages under `fields.<name>` (`fields` exists **only** on 400)
 - `401` + `UNAUTHORIZED` → `"Usuário ou senha inválidos"` (no `fields`)
 - `409` + `BUSINESS_RULE_VIOLATION` → business messages (e.g. `"Usuário já cadastrado"`, `"E-mail já cadastrado"`, `"As senhas não coincidem"`)
-- Validation rules: name/username 3–50 chars (3–50 for username too), email max 50, password 8–30 chars; blank/whitespace-only counts as missing ("obrigatório").
+- Error envelope schema: `schemas/common/error-response-schema.json`.
+
+Validation rules (confirmed against the running API):
+
+- name/username 3–50 chars; email max 50; password 8–30 chars; blank/whitespace-only counts as missing ("obrigatório").
+- Email format invalid if surrounded by spaces (`" qa@test.com "` → `"O e-mail deve ser válido"`); values are **not** trimmed.
+- username has **no** pattern restriction (special chars accepted) and email accepts uppercase (stored literally, no normalization).
+- Login is case-sensitive and matches the stored value exactly. Register→login with the same credentials works (covered by `AuthenticationTest`).
 
 ## Conventions
 

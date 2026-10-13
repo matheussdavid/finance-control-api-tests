@@ -37,15 +37,16 @@ src/test/java/com/financecontrol/
 ├── models/        # payloads de request (LoginRequest, UserRegistrationRequest)
 └── tests/         # testes por feature (tests/authentication/...)
 
-src/test/resources/schemas/authentication/   # JSON Schemas das respostas
+src/test/resources/schemas/authentication/   # JSON Schemas das respostas (sucesso)
+src/test/resources/schemas/common/           # error-response-schema.json (envelope de erro)
 ```
 
 Separação de responsabilidade: **teste** = o que validar; **client** = como chamar a API; **fixture** = dados; **model** = payload.
 
 ## Cobertura atual
 
-- `AuthenticationTest` — 15 testes de login (200 + contrato, 401, 400 com `fields`)
-- `UserRegistrationTest` — 27 testes de cadastro (201 + contrato, 409, 400 por validação de campo), com `@ParameterizedTest` para limites de tamanho
+- `AuthenticationTest` — 16 testes de login (200 + contrato, 401, 400 com `fields`, register→login e2e)
+- `UserRegistrationTest` — 42 testes de cadastro (201 + contrato, 409, 400 por validação de campo), com `@ParameterizedTest` para limites de tamanho e casos de charset/case/espaços
 
 ## Dados reservados (não usar em happy path)
 
@@ -61,11 +62,13 @@ Dados únicos: `UserRegistrationFixture.usuarioValido()` (UUID + Data Faker).
 
 Sucesso: `201` register, `200` login — ambos retornam `token` + `user`.
 
-Falhas (mensagens PT-BR, correspondência exata):
+Falhas (mensagens PT-BR, correspondência exata). Comum: `timestamp`, `status`, `error`, `message`, `path`:
 
-- `400` + `VALIDATION_ERROR` → mensagens em `fields.<campo>`
+- `400` + `VALIDATION_ERROR` → mensagens em `fields.<campo>` (`fields` só existe no 400)
 - `401` + `UNAUTHORIZED` → `"Usuário ou senha inválidos"` (sem `fields`)
 - `409` + `BUSINESS_RULE_VIOLATION` → ex.: `"Usuário já cadastrado"`, `"As senhas não coincidem"`
+
+Envelope validado por schema em `schemas/common/error-response-schema.json`.
 
 ## Documentos
 

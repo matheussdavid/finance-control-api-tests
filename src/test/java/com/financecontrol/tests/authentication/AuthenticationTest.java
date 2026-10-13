@@ -2,7 +2,9 @@ package com.financecontrol.tests.authentication;
 
 import com.financecontrol.clients.authentication.AuthClient;
 import com.financecontrol.fixtures.authentication.LoginFixture;
+import com.financecontrol.fixtures.authentication.UserRegistrationFixture;
 import com.financecontrol.models.authentication.LoginRequest;
+import com.financecontrol.models.authentication.UserRegistrationRequest;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 
@@ -64,6 +66,25 @@ public class AuthenticationTest {
                 .body("user.id", not(isEmptyOrNullString()))
                 .body("user.name", equalTo("Tester"))
                 .body("user.email", equalTo("admin@qa.com"));
+    }
+
+    @Test
+    void deveRealizarLoginComCredenciaisDeUsuarioRecemCadastrado() {
+        UserRegistrationRequest cadastro = UserRegistrationFixture.usuarioValido();
+        new AuthClient().register(cadastro);
+
+        LoginRequest login = new LoginRequest(
+                cadastro.getUsername(),
+                cadastro.getPassword()
+        );
+        Response response = new AuthClient().login(login);
+
+        response.then()
+                .statusCode(200)
+                .body("token", not(isEmptyOrNullString()))
+                .body("user.id", not(isEmptyOrNullString()))
+                .body("user.name", equalTo(cadastro.getName()))
+                .body("user.email", equalTo(cadastro.getEmail()));
     }
 
     @Test

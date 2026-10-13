@@ -20,6 +20,15 @@ public class UserRegistrationTest {
         UserRegistrationFixture.prepararUsuariosDeDuplicidade();
     }
 
+    private void validarErro400(Response response, String campo, String mensagem) {
+        response.then()
+                .statusCode(400)
+                .body("status", equalTo(400))
+                .body("error", equalTo("VALIDATION_ERROR"))
+                .body("message", equalTo("Falha na validação"))
+                .body("fields." + campo, equalTo(mensagem));
+    }
+
     @Test
     void deveRespeitarContratoAoRealizarRegistroDeUsuarioComCredenciaisValidas() {
         UserRegistrationRequest usuario = UserRegistrationFixture.usuarioValido();
@@ -96,12 +105,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.name", equalTo("O nome é obrigatório"));
+        validarErro400(response, "name", "O nome é obrigatório");
     }
 
     @Test
@@ -124,12 +128,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.username", equalTo("O usuário é obrigatório"));
+        validarErro400(response, "username", "O usuário é obrigatório");
     }
 
     @Test
@@ -152,12 +151,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.email", equalTo("O e-mail é obrigatório"));
+        validarErro400(response, "email", "O e-mail é obrigatório");
     }
 
     @Test
@@ -180,12 +174,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.password", equalTo("A senha é obrigatória"));
+        validarErro400(response, "password", "A senha é obrigatória");
     }
 
     @Test
@@ -208,14 +197,8 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.confirmPassword", equalTo("A confirmação de senha é obrigatória"));
+        validarErro400(response, "confirmPassword", "A confirmação de senha é obrigatória");
     }
-
 
     @Test
     void deveRetornar409AoCadastrarUsuarioComSenhasDiferentes() {
@@ -232,41 +215,44 @@ public class UserRegistrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "1234567",
-            "1234567890123456789012345678901"
-    })
-    void deveRetornar400AoCadastrarUsuarioComSenhaForaDoLimite(String password) {
+    @ValueSource(ints = {7,31})
+    void deveRetornar400AoCadastrarUsuarioComSenhaForaDoLimite(int tamanho) {
         UserRegistrationRequest usuario =
-                UserRegistrationFixture.usuarioComSenha(password);
+                UserRegistrationFixture.usuarioComSenha(
+                        UserRegistrationFixture.gerarTexto(tamanho));
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.password", equalTo("A senha deve ter entre 8 e 30 caracteres"));
+        validarErro400(response, "password", "A senha deve ter entre 8 e 30 caracteres");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "1234567",
-            "1234567890123456789012345678901"
-    })
-    void deveRetornar400AoCadastrarUsuarioComConfirmacaoDeSenhaForaDoLimite(String confirmPassword) {
+    @ValueSource(ints = {8,30})
+    void deveRetornar201AoCadastrarUsuarioComSenhaNoLimite(int tamanho) {
         UserRegistrationRequest usuario =
-                UserRegistrationFixture.usuarioComConfirmacaoDeSenha(confirmPassword);
+                UserRegistrationFixture.usuarioComSenhaIguais(
+                        UserRegistrationFixture.gerarTexto(tamanho));
 
         Response response = new AuthClient().register(usuario);
 
         response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.confirmPassword", equalTo("A senha deve ter entre 8 e 30 caracteres"));
+                .statusCode(201)
+                .body("token", notNullValue())
+                .body("user.id", notNullValue())
+                .body("user.name", equalTo(usuario.getName()))
+                .body("user.email", equalTo(usuario.getEmail()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {7,31})
+    void deveRetornar400AoCadastrarUsuarioComConfirmacaoDeSenhaForaDoLimite(int tamanho) {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComConfirmacaoDeSenha(
+                        UserRegistrationFixture.gerarTexto(tamanho));
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "confirmPassword", "A senha deve ter entre 8 e 30 caracteres");
     }
 
     @Test
@@ -276,70 +262,166 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.email", equalTo("O e-mail deve ser válido"));
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-            "QA",
-            "vmfCcyE2Tdgw4kvQsgMat4rUopN3L9298ZCvQbHAldbjbc7p1mte76ie9NJZTXAQ"
-    })
-    void deveRetornar400AoCadastrarUsuarioComUsernameForaDoLimite(String username) {
-        UserRegistrationRequest usuario =
-                UserRegistrationFixture.usuarioComUsername(username);
-
-        Response response = new AuthClient().register(usuario);
-
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.username", equalTo("O usuário deve ter entre 3 e 50 caracteres"));
-    }
-
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-            "QA",
-            "vmfCcyE2Tdgw4kvQsgMat4rUopN3L9298ZCvQbHAldbjbc7p1mte76ie9NJZTXAQ"
-    })
-    void deveRetornar400AoCadastrarUsuarioComNomeForaDoLimite(String name) {
-        UserRegistrationRequest usuario =
-                UserRegistrationFixture.usuarioComNome(name);
-
-        Response response = new AuthClient().register(usuario);
-
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.name", equalTo("O nome deve ter entre 3 e 50 caracteres"));
+        validarErro400(response, "email", "O e-mail deve ser válido");
     }
 
     @Test
-    void deveRetornar400AoCadastrarUsuarioComEmailMaiorQue50Caracteres() {
-        String email = "usuario123456789012345678901234567890123456789@test.com";
-
+    void deveRetornar400AoCadastrarUsuarioComEmailComEspacosNasExtremidades() {
         UserRegistrationRequest usuario =
-                UserRegistrationFixture.usuarioComEmail(email);
+                UserRegistrationFixture.usuarioComEmailComEspacos();
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "email", "O e-mail deve ser válido");
+    }
+
+    @Test
+    void deveRetornar201AoCadastrarUsuarioComUsernameComCaracteresEspeciais() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComUsernameComCaracteresEspeciais();
 
         Response response = new AuthClient().register(usuario);
 
         response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.email", equalTo("O e-mail deve ter no máximo 50 caracteres"));
+                .statusCode(201)
+                .body("token", notNullValue())
+                .body("user.id", notNullValue())
+                .body("user.name", equalTo(usuario.getName()))
+                .body("user.email", equalTo(usuario.getEmail()));
     }
 
+    @Test
+    void deveRetornar201AoCadastrarUsuarioComEmailEmMaiusculas() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComEmailEmMaiusculas();
+
+        Response response = new AuthClient().register(usuario);
+
+        response.then()
+                .statusCode(201)
+                .body("token", notNullValue())
+                .body("user.email", equalTo(usuario.getEmail()));
+    }
+
+    @Test
+    void deveRetornar201AoCadastrarUsuarioComUsernameComEspacosNasExtremidades() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComUsernameComEspacos();
+
+        Response response = new AuthClient().register(usuario);
+
+        response.then()
+                .statusCode(201)
+                .body("token", notNullValue())
+                .body("user.id", notNullValue());
+    }
+
+    @Test
+    void deveRetornar201AoCadastrarUsuarioComNomeComEspacosNasExtremidades() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComNomeComEspacos();
+
+        Response response = new AuthClient().register(usuario);
+
+        response.then()
+                .statusCode(201)
+                .body("token", notNullValue())
+                .body("user.name", equalTo(usuario.getName()));
+    }
+
+    @Test
+    void deveRespeitarContratoDeEnvelopeDeErro() {
+        Response response = new AuthClient().register("{}");
+
+        response.then()
+                .statusCode(400)
+                .body(matchesJsonSchemaInClasspath(
+                        "schemas/common/error-response-schema.json"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {2,51})
+    void deveRetornar400AoCadastrarUsuarioComUsernameForaDoLimite(int tamanho) {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComUsername(
+                        UserRegistrationFixture.gerarTexto(tamanho));
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "username", "O usuário deve ter entre 3 e 50 caracteres");
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {3,50})
+    void deveRetornar201AoCadastrarUsuarioComUsernameNoLimite(int tamanho) {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComUsername(
+                        UserRegistrationFixture.gerarTexto(tamanho));
+
+        Response response = new AuthClient().register(usuario);
+
+        response.then()
+                .statusCode(201)
+                .body("token", notNullValue())
+                .body("user.id", notNullValue())
+                .body("user.name", equalTo(usuario.getName()))
+                .body("user.email", equalTo(usuario.getEmail()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {2,51})
+    void deveRetornar400AoCadastrarUsuarioComNomeForaDoLimite(int tamanho) {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComNome(
+                        UserRegistrationFixture.gerarTexto(tamanho));
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "name", "O nome deve ter entre 3 e 50 caracteres");
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {3,50})
+    void deveRetornar201AoCadastrarUsuarioComNomeNoLimite(int tamanho) {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComNome(
+                        UserRegistrationFixture.gerarTexto(tamanho));
+
+        Response response = new AuthClient().register(usuario);
+
+        response.then()
+                .statusCode(201)
+                .body("token", notNullValue())
+                .body("user.id", notNullValue())
+                .body("user.name", equalTo(usuario.getName()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {51})
+    void deveRetornar400AoCadastrarUsuarioComEmailMaiorQue50Caracteres(int tamanho) {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComEmail(
+                        UserRegistrationFixture.gerarEmailComTamanho(tamanho));
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "email", "O e-mail deve ter no máximo 50 caracteres");
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {50})
+    void deveRetornar201AoCadastrarUsuarioComEmailNoLimite(int tamanho) {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComEmail(
+                        UserRegistrationFixture.gerarEmailComTamanho(tamanho));
+
+        Response response = new AuthClient().register(usuario);
+
+        response.then()
+                .statusCode(201)
+                .body("token", notNullValue())
+                .body("user.id", notNullValue());
+    }
 
     @Test
     void deveRetornar400AoCadastrarUsuarioComNameVazio() {
@@ -348,12 +430,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.name", equalTo("O nome é obrigatório"));
+        validarErro400(response, "name", "O nome é obrigatório");
     }
 
     @Test
@@ -363,12 +440,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.username", equalTo("O usuário é obrigatório"));
+        validarErro400(response, "username", "O usuário é obrigatório");
     }
 
     @Test
@@ -378,12 +450,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields.email", equalTo("O e-mail é obrigatório"));
+        validarErro400(response, "email", "O e-mail é obrigatório");
     }
 
     @Test
@@ -409,9 +476,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("fields.name", equalTo("O nome é obrigatório"));
+        validarErro400(response, "name", "O nome é obrigatório");
     }
 
     @Test
@@ -421,9 +486,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("fields.username", equalTo("O usuário é obrigatório"));
+        validarErro400(response, "username", "O usuário é obrigatório");
     }
 
     @Test
@@ -433,9 +496,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("fields.email", equalTo("O e-mail é obrigatório"));
+        validarErro400(response, "email", "O e-mail é obrigatório");
     }
 
     @Test
@@ -445,9 +506,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("fields.password", equalTo("A senha é obrigatória"));
+        validarErro400(response, "password", "A senha é obrigatória");
     }
 
     @Test
@@ -457,9 +516,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("fields.password", equalTo("A senha é obrigatória"));
+        validarErro400(response, "password", "A senha é obrigatória");
     }
 
     @Test
@@ -469,9 +526,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("fields.confirmPassword", equalTo("A confirmação de senha é obrigatória"));
+        validarErro400(response, "confirmPassword", "A confirmação de senha é obrigatória");
     }
 
     @Test
@@ -481,12 +536,56 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(400)
-                .body("fields.confirmPassword",
-                        equalTo("A confirmação de senha é obrigatória"));
+        validarErro400(response, "confirmPassword", "A confirmação de senha é obrigatória");
     }
 
+    @Test
+    void deveRetornar400AoCadastrarUsuarioComNomeNulo() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComNome(null);
 
+        Response response = new AuthClient().register(usuario);
 
+        validarErro400(response, "name", "O nome é obrigatório");
+    }
+
+    @Test
+    void deveRetornar400AoCadastrarUsuarioComUsernameNulo() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComUsername(null);
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "username", "O usuário é obrigatório");
+    }
+
+    @Test
+    void deveRetornar400AoCadastrarUsuarioComEmailNulo() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComEmail(null);
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "email", "O e-mail é obrigatório");
+    }
+
+    @Test
+    void deveRetornar400AoCadastrarUsuarioComSenhaNula() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComSenha(null);
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "password", "A senha é obrigatória");
+    }
+
+    @Test
+    void deveRetornar400AoCadastrarUsuarioComConfirmacaoDeSenhaNula() {
+        UserRegistrationRequest usuario =
+                UserRegistrationFixture.usuarioComConfirmacaoDeSenha(null);
+
+        Response response = new AuthClient().register(usuario);
+
+        validarErro400(response, "confirmPassword", "A confirmação de senha é obrigatória");
+    }
 }

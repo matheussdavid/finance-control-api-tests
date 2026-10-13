@@ -4,6 +4,7 @@ import com.financecontrol.clients.authentication.AuthClient;
 import com.financecontrol.models.authentication.UserRegistrationRequest;
 import io.restassured.response.Response;
 import net.datafaker.Faker;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.UUID;
 
@@ -14,6 +15,23 @@ public class UserRegistrationFixture {
     private static final String SENHA_PADRAO = "Teste@123";
     private static final String USERNAME_DUPLICIDADE = "qatester";
     private static final String EMAIL_DUPLICIDADE = "qa@tester.com";
+    private static final String DOMINIO_EMAIL = "@test.com";
+
+    public static String gerarTexto(int tamanho) {
+        return RandomStringUtils.insecure().nextAlphanumeric(tamanho);
+    }
+
+    public static String gerarEmailComTamanho(int tamanho) {
+        int tamanhoLocal = tamanho - DOMINIO_EMAIL.length();
+
+        if (tamanhoLocal < 1) {
+            throw new IllegalArgumentException(
+                    "Tamanho de e-mail deve ser maior que o domínio: "
+                            + DOMINIO_EMAIL.length());
+        }
+
+        return gerarTexto(tamanhoLocal) + DOMINIO_EMAIL;
+    }
 
     public static UserRegistrationRequest usuarioValido() {
         String identificador = UUID.randomUUID()
@@ -93,6 +111,18 @@ public class UserRegistrationFixture {
         );
     }
 
+    public static UserRegistrationRequest usuarioComSenhaIguais(String senha) {
+        UserRegistrationRequest usuario = usuarioValido();
+
+        return new UserRegistrationRequest(
+                usuario.getName(),
+                usuario.getUsername(),
+                usuario.getEmail(),
+                senha,
+                senha
+        );
+    }
+
     public static UserRegistrationRequest usuarioComConfirmacaoDeSenha(String confirmPassword) {
         UserRegistrationRequest usuario = usuarioValido();
 
@@ -112,6 +142,66 @@ public class UserRegistrationFixture {
                 usuario.getName(),
                 usuario.getUsername(),
                 "email-invalido",
+                usuario.getPassword(),
+                usuario.getConfirmPassword()
+        );
+    }
+
+    public static UserRegistrationRequest usuarioComUsernameComCaracteresEspeciais() {
+        UserRegistrationRequest usuario = usuarioValido();
+
+        return new UserRegistrationRequest(
+                usuario.getName(),
+                "qa!@#$%^&*" + UUID.randomUUID().toString().replace("-", ""),
+                usuario.getEmail(),
+                usuario.getPassword(),
+                usuario.getConfirmPassword()
+        );
+    }
+
+    public static UserRegistrationRequest usuarioComEmailEmMaiusculas() {
+        UserRegistrationRequest usuario = usuarioValido();
+
+        return new UserRegistrationRequest(
+                usuario.getName(),
+                usuario.getUsername(),
+                usuario.getEmail().toUpperCase(),
+                usuario.getPassword(),
+                usuario.getConfirmPassword()
+        );
+    }
+
+    public static UserRegistrationRequest usuarioComEmailComEspacos() {
+        UserRegistrationRequest usuario = usuarioValido();
+
+        return new UserRegistrationRequest(
+                usuario.getName(),
+                usuario.getUsername(),
+                " " + usuario.getEmail() + " ",
+                usuario.getPassword(),
+                usuario.getConfirmPassword()
+        );
+    }
+
+    public static UserRegistrationRequest usuarioComUsernameComEspacos() {
+        UserRegistrationRequest usuario = usuarioValido();
+
+        return new UserRegistrationRequest(
+                usuario.getName(),
+                " " + usuario.getUsername() + " ",
+                usuario.getEmail(),
+                usuario.getPassword(),
+                usuario.getConfirmPassword()
+        );
+    }
+
+    public static UserRegistrationRequest usuarioComNomeComEspacos() {
+        UserRegistrationRequest usuario = usuarioValido();
+
+        return new UserRegistrationRequest(
+                " " + usuario.getName() + " ",
+                usuario.getUsername(),
+                usuario.getEmail(),
                 usuario.getPassword(),
                 usuario.getConfirmPassword()
         );
@@ -138,36 +228,24 @@ public class UserRegistrationFixture {
         );
     }
 
-
     public static void prepararUsuariosDeDuplicidade() {
-        AuthClient client = new AuthClient();
-
-        UserRegistrationRequest usuario = new UserRegistrationRequest(
-                "QA Tester",
-                USERNAME_DUPLICIDADE,
-                EMAIL_DUPLICIDADE,
-                "12345678",
-                "12345678"
+        Response response = new AuthClient().register(
+                new UserRegistrationRequest(
+                        "QA Tester",
+                        USERNAME_DUPLICIDADE,
+                        EMAIL_DUPLICIDADE,
+                        SENHA_PADRAO,
+                        SENHA_PADRAO
+                )
         );
 
-        Response response = client.register(usuario);
-
-        if (response.statusCode() == 201) {
+        if (response.statusCode() == 201 || response.statusCode() == 409) {
             return;
         }
 
-        if (response.statusCode() == 409) {
-            String mensagem = response.jsonPath().getString("message");
-
-            if ("Usuário já cadastrado".equals(mensagem)
-                    || "E-mail já cadastrado".equals(mensagem)) {
-                return;
-            }
-        }
-
         throw new IllegalStateException(
-                "Não foi possível preparar os usuários de duplicidade. "
-                        + "Status: " + response.statusCode()
+                "Falha ao preparar usuários de duplicidade. Status: "
+                        + response.statusCode()
                         + ", resposta: " + response.asString()
         );
     }
