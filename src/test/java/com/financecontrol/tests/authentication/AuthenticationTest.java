@@ -8,28 +8,17 @@ import com.financecontrol.models.authentication.UserRegistrationRequest;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 
+import static com.financecontrol.assertions.ErrorAssertions.validarErro400;
+import static com.financecontrol.assertions.ErrorAssertions.validarErro401;
+import static com.financecontrol.assertions.ErrorMessages.FALHA_VALIDACAO;
+import static com.financecontrol.assertions.ErrorMessages.IDENTIFICADOR_OBRIGATORIO;
+import static com.financecontrol.assertions.ErrorMessages.SENHA_OBRIGATORIA;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 
 public class AuthenticationTest {
-
-    private void validarErro400(Response response) {
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"));
-    }
-
-    private void validarErro401(Response response) {
-        response.then()
-                .statusCode(401)
-                .body("status", equalTo(401))
-                .body("error", equalTo("UNAUTHORIZED"))
-                .body("message", equalTo("Usuário ou senha inválidos"));
-    }
 
     @Test
     void deveRespeitarContratoAoRealizarLoginComCredenciaisValidas() {
@@ -112,34 +101,68 @@ public class AuthenticationTest {
     }
 
     @Test
-    void deveRetornar400AoRealizarLoginSemInformarEmail() {
-        LoginRequest login = new LoginRequest(null, "qualquer-senha");
-        Response response = new AuthClient().login(login);
+    void deveRetornar400AoRealizarLoginSemInformarIdentificador() {
+        String body = """
+                { "password": "qualquer-senha" }
+                """;
 
-        validarErro400(response);
-        response.then()
-                .body("fields.identifier", equalTo("Usuário ou e-mail é obrigatório"));
+        Response response = new AuthClient().login(body);
+
+        validarErro400(response, "identifier", IDENTIFICADOR_OBRIGATORIO);
     }
 
     @Test
     void deveRetornar400AoRealizarLoginSemInformarSenha() {
-        LoginRequest login = new LoginRequest("admin", null);
-        Response response = new AuthClient().login(login);
+        String body = """
+                { "identifier": "admin" }
+                """;
 
-        validarErro400(response);
-        response.then()
-                .body("fields.password", equalTo("A senha é obrigatória"));
+        Response response = new AuthClient().login(body);
+
+        validarErro400(response, "password", SENHA_OBRIGATORIA);
     }
 
     @Test
     void deveRetornar400AoRealizarLoginSemInformarCredenciais() {
-        LoginRequest login = new LoginRequest(null, null);
+        Response response = new AuthClient().login("{}");
+
+        response.then()
+                .statusCode(400)
+                .body("status", equalTo(400))
+                .body("error", equalTo("VALIDATION_ERROR"))
+                .body("message", equalTo(FALHA_VALIDACAO))
+                .body("fields.identifier", equalTo(IDENTIFICADOR_OBRIGATORIO))
+                .body("fields.password", equalTo(SENHA_OBRIGATORIA));
+    }
+
+    @Test
+    void deveRetornar400AoRealizarLoginComIdentificadorNulo() {
+        LoginRequest login = LoginFixture.loginComIdentificadorNulo();
         Response response = new AuthClient().login(login);
 
-        validarErro400(response);
+        validarErro400(response, "identifier", IDENTIFICADOR_OBRIGATORIO);
+    }
+
+    @Test
+    void deveRetornar400AoRealizarLoginComSenhaNula() {
+        LoginRequest login = LoginFixture.loginComSenhaNula();
+        Response response = new AuthClient().login(login);
+
+        validarErro400(response, "password", SENHA_OBRIGATORIA);
+    }
+
+    @Test
+    void deveRetornar400AoRealizarLoginComCredenciaisNulas() {
+        LoginRequest login = LoginFixture.loginComCredenciaisNulas();
+        Response response = new AuthClient().login(login);
+
         response.then()
-                .body("fields.identifier", equalTo("Usuário ou e-mail é obrigatório"))
-                .body("fields.password", equalTo("A senha é obrigatória"));
+                .statusCode(400)
+                .body("status", equalTo(400))
+                .body("error", equalTo("VALIDATION_ERROR"))
+                .body("message", equalTo(FALHA_VALIDACAO))
+                .body("fields.identifier", equalTo(IDENTIFICADOR_OBRIGATORIO))
+                .body("fields.password", equalTo(SENHA_OBRIGATORIA));
     }
 
     @Test
@@ -147,9 +170,7 @@ public class AuthenticationTest {
         LoginRequest login = new LoginRequest("", "12345678");
         Response response = new AuthClient().login(login);
 
-        validarErro400(response);
-        response.then()
-                .body("fields.identifier", equalTo("Usuário ou e-mail é obrigatório"));
+        validarErro400(response, "identifier", IDENTIFICADOR_OBRIGATORIO);
     }
 
     @Test
@@ -157,9 +178,7 @@ public class AuthenticationTest {
         LoginRequest login = new LoginRequest("admin", "");
         Response response = new AuthClient().login(login);
 
-        validarErro400(response);
-        response.then()
-                .body("fields.password", equalTo("A senha é obrigatória"));
+        validarErro400(response, "password", SENHA_OBRIGATORIA);
     }
 
     @Test
@@ -167,10 +186,13 @@ public class AuthenticationTest {
         LoginRequest login = new LoginRequest("", "");
         Response response = new AuthClient().login(login);
 
-        validarErro400(response);
         response.then()
-                .body("fields.identifier", equalTo("Usuário ou e-mail é obrigatório"))
-                .body("fields.password", equalTo("A senha é obrigatória"));
+                .statusCode(400)
+                .body("status", equalTo(400))
+                .body("error", equalTo("VALIDATION_ERROR"))
+                .body("message", equalTo(FALHA_VALIDACAO))
+                .body("fields.identifier", equalTo(IDENTIFICADOR_OBRIGATORIO))
+                .body("fields.password", equalTo(SENHA_OBRIGATORIA));
     }
 
     @Test
@@ -194,8 +216,6 @@ public class AuthenticationTest {
         LoginRequest login = new LoginRequest("   ", "12345678");
         Response response = new AuthClient().login(login);
 
-        validarErro400(response);
-        response.then()
-                .body("fields.identifier", equalTo("Usuário ou e-mail é obrigatório"));
+        validarErro400(response, "identifier", IDENTIFICADOR_OBRIGATORIO);
     }
 }

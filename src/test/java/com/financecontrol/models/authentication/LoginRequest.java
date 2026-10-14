@@ -1,12 +1,9 @@
 package com.financecontrol.models.authentication;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginRequest {
 
-    private String identifier;
-    private String password;
+    private final String identifier;
+    private final String password;
 
     public LoginRequest(String identifier, String password) {
         this.identifier = identifier;
