@@ -2,11 +2,11 @@ package com.financecontrol.models.authentication;
 
 public class UserRegistrationRequest {
 
-    private String name;
-    private String username;
-    private String email;
-    private String password;
-    private String confirmPassword;
+    private final String name;
+    private final String username;
+    private final String email;
+    private final String password;
+    private final String confirmPassword;
 
     public UserRegistrationRequest(String name, String username, String email, String password, String confirmPassword) {
         this.name = name;

@@ -23,6 +23,7 @@ com.financecontrol
 ├── clients/      AuthClient (login/register)
 ├── fixtures/     LoginFixture, UserRegistrationFixture
 ├── models/       LoginRequest, UserRegistrationRequest
+├── assertions/   ErrorAssertions (400/401/409) + ErrorMessages (mensagens PT-BR)
 └── tests/        AuthenticationTest, UserRegistrationTest
 ```
 
@@ -51,14 +52,15 @@ Pacote por responsabilidade (antes tudo em `authentication/`). Conceito aprendid
 ## 4) AuthenticationTest
 
 - Cobertura: 16 casos (4x 200 — inclui register→login e2e, 5x 401, 7x 400). Segue contrato PT-BR exato
-- Helpers privados `validarErro400`/`validarErro401` para envelope comum (repetição real justificou)
+- Erros delegados a `ErrorAssertions.validarErro400/401` (compartilhado); multi-campo (`...SemInformarCredenciais`, `...IdentificadorESenhaVazios`) permanece inline no teste
 - Uso: `.spec()` via client, JSONPath (`token`, `user.*`, `fields.*`), Hamcrest
 - Aprendizado: `401` sem `fields`, `400` com `fields`; casos de borda (vazio, só espaços, maiúsculas); fluxo register→login com credenciais recém-cadastradas
 
 ## 5) UserRegistrationTest
 
-- Cobertura: 42 testes (6x 201 — contrato, limites, charset/case/espaços; 2x 409; 34x 400). `@ParameterizedTest` + `@ValueSource` para limites de tamanho
+- Cobertura: 42 testes (6x 201 — contrato, limites, charset/case/espaços; 3x 409; 33x 400). `@ParameterizedTest` + `@ValueSource` para limites de tamanho
 - `@BeforeAll` chama `prepararUsuariosDeDuplicidade()` (seed idempotente: 201 ou 409 esperado, senão falha com mensagem clara)
+- Erros de 1 campo via `ErrorAssertions.validarErro400(response, campo, MENSAGEM)`; 409 via `validarErro409`; `...ComBodyVazio` (multi-campo) inline
 - Aprendizado: text blocks + `.formatted`, JSONPath aninhado, boundary testing, testes negativos completos (vazio/em branco/fora limite/inválido)
 
 ## 6) Regras confirmadas (sonda empírica na API)
@@ -78,6 +80,13 @@ Validado contra a API rodando (requests que falham em outro campo → sem efeito
 - Contrato de erro validado por **1 caso** (`deveRespeitarContratoDeEnvelopeDeErro`, 400) — sem repetir em todo negativo (redundante)
 - Aprendizado: schema validation complementa matchers; contrato mudou → teste falha mesmo com valores ok
 
+## 8) Validações compartilhadas (assertions)
+
+- `ErrorAssertions` (público): `validarErro400(response, campo, mensagem)`, `validarErro401(response)`, `validarErro409(response, mensagem)`; `validarEnvelope` privado retorna `ValidatableResponse` (encadeia `fields.<campo>` sem repetir o envelope)
+- `ErrorMessages`: constantes PT-BR (mensagens); códigos (`VALIDATION_ERROR` etc.) `private` em `ErrorAssertions` (nenhum teste usa direto)
+- Padrão: 1 campo → uma chamada; multi-campo → validação inline no teste (decisão explícita do projeto)
+- Aprendizado: concentrar o contrato de erro num só lugar; trocar mensagem/regra em um único ponto
+
 ## Dependências novas (pom)
 
 - `tools.jackson.core:jackson-databind` — serialização dos models para JSON
@@ -95,6 +104,7 @@ Obs.: scopes `compile` (não `test`) — worth revisar para `test` já que só s
 - JSON Schema validation (`matchesJsonSchemaInClasspath`)
 - Matchers Hamcrest: `equalTo`, `notNullValue`, `isEmptyOrNullString`
 - JSONPath: campos simples/aninhados, `fields.<campo>`
+- Reuso de validação de contrato via assertions estáticas (`ErrorAssertions` + constantes)
 - Parametrização com `@ParameterizedTest`/`@ValueSource`
 - Fixtures + `@BeforeAll` para preparo de dados
 

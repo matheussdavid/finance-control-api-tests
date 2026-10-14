@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static com.financecontrol.assertions.ErrorAssertions.validarErro400;
+import static com.financecontrol.assertions.ErrorAssertions.validarErro409;
+import static com.financecontrol.assertions.ErrorMessages.*;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -18,15 +21,6 @@ public class UserRegistrationTest {
     @BeforeAll
     static void prepararDadosDeTeste() {
         UserRegistrationFixture.prepararUsuariosDeDuplicidade();
-    }
-
-    private void validarErro400(Response response, String campo, String mensagem) {
-        response.then()
-                .statusCode(400)
-                .body("status", equalTo(400))
-                .body("error", equalTo("VALIDATION_ERROR"))
-                .body("message", equalTo("Falha na validação"))
-                .body("fields." + campo, equalTo(mensagem));
     }
 
     @Test
@@ -64,11 +58,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(409)
-                .body("status", equalTo(409))
-                .body("error", equalTo("BUSINESS_RULE_VIOLATION"))
-                .body("message", equalTo("Usuário já cadastrado"));
+        validarErro409(response, USUARIO_JA_CADASTRADO);
     }
 
     @Test
@@ -78,11 +68,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(409)
-                .body("status", equalTo(409))
-                .body("error", equalTo("BUSINESS_RULE_VIOLATION"))
-                .body("message", equalTo("E-mail já cadastrado"));
+        validarErro409(response, EMAIL_JA_CADASTRADO);
     }
 
     @Test
@@ -105,7 +91,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        validarErro400(response, "name", "O nome é obrigatório");
+        validarErro400(response, "name", NOME_OBRIGATORIO);
     }
 
     @Test
@@ -128,7 +114,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        validarErro400(response, "username", "O usuário é obrigatório");
+        validarErro400(response, "username", USUARIO_OBRIGATORIO);
     }
 
     @Test
@@ -151,7 +137,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        validarErro400(response, "email", "O e-mail é obrigatório");
+        validarErro400(response, "email", EMAIL_OBRIGATORIO);
     }
 
     @Test
@@ -174,7 +160,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        validarErro400(response, "password", "A senha é obrigatória");
+        validarErro400(response, "password", SENHA_OBRIGATORIA);
     }
 
     @Test
@@ -197,7 +183,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(body);
 
-        validarErro400(response, "confirmPassword", "A confirmação de senha é obrigatória");
+        validarErro400(response, "confirmPassword", CONFIRMACAO_SENHA_OBRIGATORIA);
     }
 
     @Test
@@ -207,11 +193,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        response.then()
-                .statusCode(409)
-                .body("status", equalTo(409))
-                .body("error", equalTo("BUSINESS_RULE_VIOLATION"))
-                .body("message", equalTo("As senhas não coincidem"));
+        validarErro409(response, SENHAS_NAO_COINCIDEM);
     }
 
     @ParameterizedTest
@@ -223,7 +205,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "password", "A senha deve ter entre 8 e 30 caracteres");
+        validarErro400(response, "password", SENHA_TAMANHO);
     }
 
     @ParameterizedTest
@@ -252,7 +234,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "confirmPassword", "A senha deve ter entre 8 e 30 caracteres");
+        validarErro400(response, "confirmPassword", SENHA_TAMANHO);
     }
 
     @Test
@@ -262,7 +244,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "email", "O e-mail deve ser válido");
+        validarErro400(response, "email", EMAIL_INVALIDO);
     }
 
     @Test
@@ -272,7 +254,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "email", "O e-mail deve ser válido");
+        validarErro400(response, "email", EMAIL_INVALIDO);
     }
 
     @Test
@@ -348,7 +330,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "username", "O usuário deve ter entre 3 e 50 caracteres");
+        validarErro400(response, "username", USUARIO_TAMANHO);
     }
 
     @ParameterizedTest
@@ -377,7 +359,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "name", "O nome deve ter entre 3 e 50 caracteres");
+        validarErro400(response, "name", NOME_TAMANHO);
     }
 
     @ParameterizedTest
@@ -405,7 +387,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "email", "O e-mail deve ter no máximo 50 caracteres");
+        validarErro400(response, "email", EMAIL_MAX_50);
     }
 
     @ParameterizedTest
@@ -430,7 +412,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "name", "O nome é obrigatório");
+        validarErro400(response, "name", NOME_OBRIGATORIO);
     }
 
     @Test
@@ -440,7 +422,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "username", "O usuário é obrigatório");
+        validarErro400(response, "username", USUARIO_OBRIGATORIO);
     }
 
     @Test
@@ -450,7 +432,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "email", "O e-mail é obrigatório");
+        validarErro400(response, "email", EMAIL_OBRIGATORIO);
     }
 
     @Test
@@ -476,7 +458,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "name", "O nome é obrigatório");
+        validarErro400(response, "name", NOME_OBRIGATORIO);
     }
 
     @Test
@@ -486,7 +468,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "username", "O usuário é obrigatório");
+        validarErro400(response, "username", USUARIO_OBRIGATORIO);
     }
 
     @Test
@@ -496,7 +478,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "email", "O e-mail é obrigatório");
+        validarErro400(response, "email", EMAIL_OBRIGATORIO);
     }
 
     @Test
@@ -506,7 +488,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "password", "A senha é obrigatória");
+        validarErro400(response, "password", SENHA_OBRIGATORIA);
     }
 
     @Test
@@ -516,7 +498,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "password", "A senha é obrigatória");
+        validarErro400(response, "password", SENHA_OBRIGATORIA);
     }
 
     @Test
@@ -526,7 +508,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "confirmPassword", "A confirmação de senha é obrigatória");
+        validarErro400(response, "confirmPassword", CONFIRMACAO_SENHA_OBRIGATORIA);
     }
 
     @Test
@@ -536,7 +518,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "confirmPassword", "A confirmação de senha é obrigatória");
+        validarErro400(response, "confirmPassword", CONFIRMACAO_SENHA_OBRIGATORIA);
     }
 
     @Test
@@ -546,7 +528,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "name", "O nome é obrigatório");
+        validarErro400(response, "name", NOME_OBRIGATORIO);
     }
 
     @Test
@@ -556,7 +538,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "username", "O usuário é obrigatório");
+        validarErro400(response, "username", USUARIO_OBRIGATORIO);
     }
 
     @Test
@@ -566,7 +548,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "email", "O e-mail é obrigatório");
+        validarErro400(response, "email", EMAIL_OBRIGATORIO);
     }
 
     @Test
@@ -576,7 +558,7 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "password", "A senha é obrigatória");
+        validarErro400(response, "password", SENHA_OBRIGATORIA);
     }
 
     @Test
@@ -586,6 +568,6 @@ public class UserRegistrationTest {
 
         Response response = new AuthClient().register(usuario);
 
-        validarErro400(response, "confirmPassword", "A confirmação de senha é obrigatória");
+        validarErro400(response, "confirmPassword", CONFIRMACAO_SENHA_OBRIGATORIA);
     }
 }

@@ -35,6 +35,7 @@ src/test/java/com/financecontrol/
 ├── clients/       # clientes HTTP (AuthClient: login/register)
 ├── fixtures/      # massa de teste (LoginFixture, UserRegistrationFixture)
 ├── models/        # payloads de request (LoginRequest, UserRegistrationRequest)
+├── assertions/    # validações compartilhadas (ErrorAssertions + ErrorMessages)
 └── tests/         # testes por feature (tests/authentication/...)
 
 src/test/resources/schemas/authentication/   # JSON Schemas das respostas (sucesso)

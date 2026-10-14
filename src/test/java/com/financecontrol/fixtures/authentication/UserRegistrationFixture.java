@@ -8,7 +8,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.UUID;
 
-public class UserRegistrationFixture {
+public final class UserRegistrationFixture {
 
     private static final Faker FAKER = new Faker();
 
@@ -16,6 +16,9 @@ public class UserRegistrationFixture {
     private static final String USERNAME_DUPLICIDADE = "qatester";
     private static final String EMAIL_DUPLICIDADE = "qa@tester.com";
     private static final String DOMINIO_EMAIL = "@test.com";
+
+    private UserRegistrationFixture() {
+    }
 
     public static String gerarTexto(int tamanho) {
         return RandomStringUtils.insecure().nextAlphanumeric(tamanho);
