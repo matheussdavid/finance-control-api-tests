@@ -55,180 +55,75 @@ public final class UserRegistrationFixture {
     }
 
     public static UserRegistrationRequest usuarioComSenhasDiferentes() {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                usuario.getUsername(),
-                usuario.getEmail(),
-                "12345678",
-                "87654321"
-        );
+        return usuarioValido().withPassword("12345678").withConfirmPassword("87654321");
     }
 
     public static UserRegistrationRequest usuarioComUsername(String username) {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                username,
-                usuario.getEmail(),
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuarioValido().withUsername(username);
     }
 
     public static UserRegistrationRequest usuarioComNome(String name) {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                name,
-                usuario.getUsername(),
-                usuario.getEmail(),
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuarioValido().withName(name);
     }
 
     public static UserRegistrationRequest usuarioComEmail(String email) {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                usuario.getUsername(),
-                email,
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuarioValido().withEmail(email);
     }
 
     public static UserRegistrationRequest usuarioComSenha(String password) {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                usuario.getUsername(),
-                usuario.getEmail(),
-                password,
-                usuario.getConfirmPassword()
-        );
+        return usuarioValido().withPassword(password);
     }
 
     public static UserRegistrationRequest usuarioComSenhaIguais(String senha) {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                usuario.getUsername(),
-                usuario.getEmail(),
-                senha,
-                senha
-        );
+        return usuarioValido().withPassword(senha).withConfirmPassword(senha);
     }
 
     public static UserRegistrationRequest usuarioComConfirmacaoDeSenha(String confirmPassword) {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                usuario.getUsername(),
-                usuario.getEmail(),
-                usuario.getPassword(),
-                confirmPassword
-        );
+        return usuarioValido().withConfirmPassword(confirmPassword);
     }
 
     public static UserRegistrationRequest usuarioComEmailInvalido() {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                usuario.getUsername(),
-                "email-invalido",
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuarioValido().withEmail("email-invalido");
     }
 
     public static UserRegistrationRequest usuarioComUsernameComCaracteresEspeciais() {
-        UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                "qa!@#$%^&*" + UUID.randomUUID().toString().replace("-", ""),
-                usuario.getEmail(),
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuarioValido().withUsername(
+                "qa!@#$%^&*" + UUID.randomUUID().toString().replace("-", ""));
     }
 
     public static UserRegistrationRequest usuarioComEmailEmMaiusculas() {
         UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                usuario.getUsername(),
-                usuario.getEmail().toUpperCase(),
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuario.withEmail(usuario.getEmail().toUpperCase());
     }
 
     public static UserRegistrationRequest usuarioComEmailComEspacos() {
         UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                usuario.getUsername(),
-                " " + usuario.getEmail() + " ",
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuario.withEmail(" " + usuario.getEmail() + " ");
     }
 
     public static UserRegistrationRequest usuarioComUsernameComEspacos() {
         UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                usuario.getName(),
-                " " + usuario.getUsername() + " ",
-                usuario.getEmail(),
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuario.withUsername(" " + usuario.getUsername() + " ");
     }
 
     public static UserRegistrationRequest usuarioComNomeComEspacos() {
         UserRegistrationRequest usuario = usuarioValido();
-
-        return new UserRegistrationRequest(
-                " " + usuario.getName() + " ",
-                usuario.getUsername(),
-                usuario.getEmail(),
-                usuario.getPassword(),
-                usuario.getConfirmPassword()
-        );
+        return usuario.withName(" " + usuario.getName() + " ");
     }
 
     public static UserRegistrationRequest usuarioComUsernameDuplicado() {
-        return new UserRegistrationRequest(
-                "QA Tester",
-                USERNAME_DUPLICIDADE,
-                "qa." + java.util.UUID.randomUUID().toString().replace("-", "")
-                        + "@test.com",
-                "12345678",
-                "12345678"
-        );
+        return usuarioValido()
+                .withName("QA Tester")
+                .withUsername(USERNAME_DUPLICIDADE)
+                .withEmail("qa." + java.util.UUID.randomUUID().toString().replace("-", "")
+                        + "@test.com");
     }
 
     public static UserRegistrationRequest usuarioComEmailDuplicado() {
-        return new UserRegistrationRequest(
-                "QA Tester",
-                "qa" + java.util.UUID.randomUUID().toString().replace("-", ""),
-                EMAIL_DUPLICIDADE,
-                "12345678",
-                "12345678"
-        );
+        return usuarioValido()
+                .withName("QA Tester")
+                .withUsername("qa" + java.util.UUID.randomUUID().toString().replace("-", ""))
+                .withEmail(EMAIL_DUPLICIDADE);
     }
 
     public static void prepararUsuariosDeDuplicidade() {

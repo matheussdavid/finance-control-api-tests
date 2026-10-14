@@ -16,6 +16,26 @@ public class UserRegistrationRequest {
         this.confirmPassword = confirmPassword;
     }
 
+    public UserRegistrationRequest withName(String name) {
+        return new UserRegistrationRequest(name, username, email, password, confirmPassword);
+    }
+
+    public UserRegistrationRequest withUsername(String username) {
+        return new UserRegistrationRequest(name, username, email, password, confirmPassword);
+    }
+
+    public UserRegistrationRequest withEmail(String email) {
+        return new UserRegistrationRequest(name, username, email, password, confirmPassword);
+    }
+
+    public UserRegistrationRequest withPassword(String password) {
+        return new UserRegistrationRequest(name, username, email, password, confirmPassword);
+    }
+
+    public UserRegistrationRequest withConfirmPassword(String confirmPassword) {
+        return new UserRegistrationRequest(name, username, email, password, confirmPassword);
+    }
+
     public String getName() { return name; }
 
     public String getUsername() { return username; }
